@@ -28,34 +28,23 @@ def prepare_window(conn, title, process):
     ''', (title, process)
     ).lastrowid
 
-def insert_observations(conn, timestamp, id_list):
-    conn.executemany('''
-        INSERT INTO WindowsObservation
-        (timestamp, window_id) VALUES
-        (?, ?)
-    ''', [(timestamp, ID) for ID in id_list])
-
-def insert_aw_observation(conn, timestamp, id):
-    conn.execute('''
-        INSERT INTO AWObservation
-        (timestamp, window_id) VALUES
-        (?, ?)
-    ''', (timestamp, id))
-
-def insert_afk_observation(conn, timestamp, afk):
-    conn.execute('''
-        INSERT INTO AFKObservation
-        (timestamp, is_afk) VALUES
-        (?, ?)
-    ''', (timestamp, afk))
-
-
 def insert(conn, windows, active_index, afk, timestamp = None, commit = True):
     if timestamp is None: timestamp = datetime.now()
-    active_id = prepare_window(conn, *windows[active_index])
+
+    active_id = prepare_window(conn, *windows[active_index]) if active_index is not None else None
     ids = [prepare_window(conn, *window) for window in windows]
-    insert_observations(conn, timestamp, ids)
-    insert_aw_observation(conn, timestamp, active_id)
-    insert_afk_observation(conn, timestamp, afk)
+
+    event_id = conn.execute('''
+        INSERT INTO EventMetadata
+        (timestamp, active_window_id, is_afk) VALUES (?, ?, ?)
+    ''', (timestamp, active_id, afk)).lastrowid
+
+    conn.executemany('''
+        INSERT INTO EventData
+        (event_id, window_id) VALUES (?, ?)
+    ''', [(event_id, id) for id in ids])
+
     if commit: conn.commit()
 
+if __name__ == '__main__':
+    conn = connect('tracker.db')
