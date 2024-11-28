@@ -71,8 +71,8 @@ def screen_digest():
 class Runner:
     def __init__(self, frequency, func, *args, **kwargs):
         self.func = func
-        sefl.args = args
-        self.kwargsr = kwargs
+        self.args = args
+        self.kwargs = kwargs
         self.frequency = frequency
         self.running = False
 
