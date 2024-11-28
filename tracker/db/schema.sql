@@ -10,18 +10,21 @@ CREATE TABLE Windows (
 );
 
 CREATE TABLE WindowsObservation (
-    timestamp DATETIME PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME NOT NULL,
     window_id INTEGER NOT NULL,
     FOREIGN KEY (window_id) REFERENCES Windows(id)
 );
 
 CREATE TABLE AWObservation (
-    timestamp DATETIME PRIMARY KEY,
-    window_id INTEGER NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME NOT NULL,
+    window_id INTEGER,
     FOREIGN KEY (window_id) REFERENCES Windows(id)
 );
 
 CREATE TABLE AFKObservation (
-    timestamp DATETIME PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME NOT NULL,
     is_afk BOOLEAN NOT NULL
 );
