@@ -3,6 +3,10 @@ import time
 import ctypes
 import hashlib
 from ctypes import wintypes
+import logging
+from . import db
+
+logger = logging.getLogger('runner')
 
 user32 = ctypes.windll.user32
 gdi32 = ctypes.windll.gdi32
@@ -67,24 +71,55 @@ def screen_digest():
     return screenshot_hash
 
 
-
 class Runner:
+    @classmethod
+    def from_observer(cls, frequency, observer, conn):
+        def write_callback(observer):
+            status = observer.observe()
+            db.insert(conn, status['windows'], status['active_index'],
+                      status['afk'], timestamp = None, commit = True
+            )
+
+        runner = cls(frequency, write_callback, observer)
+        logger.debug('Prepared periodic observer.')
+        return runner
+
     def __init__(self, frequency, func, *args, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
-        self.frequency = frequency
+        self.frequency = int(frequency)
+        self._ftol = 3
+        self._fcount = self._ftol    # Failure count
         self.running = False
 
     def _loop(self):
         while self.running:
-            time.sleep(self.frequency)
-            if not self.running: break
-            self.func(*self.args, **self.kwargs)
+            # Execution.
+            try:
+                self.func(*self.args, **self.kwargs)
+                logger.debug(f'Made a succesful function call.')
+                self._fcount = self._ftol
+            except Exception as e:
+                logger.error(f'Error in function call. Remaining failures: {self._fcount}.', exc_info = e)
+                self._fcount -= 1
+                if self._fcount <= 0:
+                    self.running = False
+                    logging.critical(f'Stopped due to too many errors ({self._ftol}).')
+                    break
+
+            # Sleeping sequence.
+            for _ in range(int(self.frequency) + 1):
+                time.sleep(1)            
+                if not self.running:
+                    logger.debug('Stopped!')
+                    break
+                
 
     def run(self):
         self.running = True
         Thread(target = self._loop).start()
 
     def stop(self):
+        logger.debug('Attempting to stop.')
         self.running = False
