@@ -1,8 +1,8 @@
-### Windows Tracker
+## Windows Tracker
 This script watches the opeend windows periodically, saving the results in a database.
 Currently, it does not do any data analysis/visualization on the result, and is only compatible with Windows.
 
-#### Usage
+### Usage
 First, install the requirements:
 ```bash
 pip install -r requirements.txt
@@ -23,5 +23,5 @@ The CLI tool `tracked.py` can be used in one of two ways.
   -v, --verbose         Increase verbosity level.
 ```
 
-#### Details
+### Details
 The list of opened windows are obtained using the Win32 API. Some postprocesssing is done to remove spurious processes/windows. AFK is detected by taking a screenshot of the screen as well as the mouse position, and comparing with the next result.
